@@ -34,6 +34,13 @@ PQ_TAB            = "Procurement Quote"
 VIETNAM_FOLDER    = "Vietnam Quote"
 APPS_SCRIPT_URL   = os.environ.get("APPS_SCRIPT_URL", "")
 
+# Claude model used for PDF extraction.
+# Override with the CLAUDE_MODEL env var so a future deprecation is a config
+# change, not a code change + rebuild.
+# claude-sonnet-4-20250514 was RETIRED 2026-06-15 — do not use.
+CLAUDE_MODEL      = os.environ.get("CLAUDE_MODEL", "claude-sonnet-4-6")
+CLAUDE_MAX_TOKENS = int(os.environ.get("CLAUDE_MAX_TOKENS", "8000"))
+
 # Protected rows in summary block — never written to
 PROTECTED_PE_ROWS = {12, 13}  # Shipping Cost, Domestic Shipping
 
@@ -161,13 +168,13 @@ def find_pdf_in_vietnam_folder(parent_folder_id: str, drive) -> tuple:
 
 # ── STEP 1: EXTRACT DATA FROM PDF ─────────────────────────────────────────────
 def extract_pdf_data(pdf_bytes: bytes) -> dict:
-    print("Sending to Claude for extraction...")
+    print(f"Sending to Claude for extraction... (model={CLAUDE_MODEL})")
     pdf_b64 = base64.standard_b64encode(pdf_bytes).decode("utf-8")
     client  = anthropic.Anthropic()
 
     response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=8000,
+        model=CLAUDE_MODEL,
+        max_tokens=CLAUDE_MAX_TOKENS,
         messages=[{
             "role": "user",
             "content": [
